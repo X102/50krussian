@@ -196,9 +196,12 @@
             document.getElementById('loadMoreBtn').style.display = 'none';
             if(renderedCount === 0) container.innerHTML = `<div class="lemma mb-1" onclick="speak('${searchInput.value}')">${searchInput.value} 🔊</div>
                         <a href="https://translate.google.com/?sl=ru&tl=vi&text=${searchInput.value}" target="_blank"> Tra Google dịch |</a>
-                        <a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${searchInput.value}" target="_blank"> Tra Vtudien |<a/>
-                        <a href="https://youglish.com/pronounce/${searchInput.value}/russian" target="_blank"> Tra Youglish |<a/>
-                        <a href="https://ru.wiktionary.org/wiki/${searchInput.value}" target="_blank"> Tra Wikitionary <a/><br\>  
+                        <a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${searchInput.value}" target="_blank"> Vtudien |<a/>
+                        <a href="https://youglish.com/pronounce/${searchInput.value}/russian" target="_blank"> Youglish |<a/>
+                        <a href="https://ru.wiktionary.org/wiki/${searchInput.value}" target="_blank"> Wikitionary |<a/>
+                        <a href="https://yandex.ru/search/?text=${searchInput.value}" target="_blank"> Yandex |<a/>
+                        <a href="https://www.google.com/search?q=từ+vựng+tiếng+nga+${searchInput.value}" target="_blank"> Google |<a/> 
+                        <a href="https://www.google.com/search?tbm=isch&q=${searchInput.value}" target="_blank"> Google Images <a/><br\>    
                         <p class="text-center w-100">Không tìm thấy.</p> <\div>`;
             return;
         }
