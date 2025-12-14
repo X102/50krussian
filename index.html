@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Từ Điển Tần Suất Tiếng Nga (Full Features)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --primary-color: #0d6efd; --bg-color: #f0f2f5; }
+        body { background-color: var(--bg-color); font-family: 'Segoe UI', sans-serif; }
+
+        /* --- THANH CÔNG CỤ --- */
+        .sticky-header {
+            position: sticky; top: 0; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        /* --- BỐ CỤC MASONRY --- */
+        .masonry-container { column-count: 1; column-gap: 15px; }
+        @media (min-width: 576px) { .masonry-container { column-count: 2; } }
+        @media (min-width: 992px) { .masonry-container { column-count: 3; } }
+        @media (min-width: 1200px) { .masonry-container { column-count: 4; } }
+
+        /* --- THẺ TỪ VỰNG --- */
+        .word-card {
+            break-inside: avoid;
+            background: white; border-radius: 10px; margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            position: relative; overflow: hidden; transition: transform 0.2s;
+        }
+        .word-card:hover { border-color: #b0c4de; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .word-card.no-meaning { background: #fafafa; border-style: dashed; }
+
+        .lemma { font-size: 1.4rem; font-weight: 700; color: var(--primary-color); cursor: pointer; }
+        .lemma:hover { text-decoration: underline; }
+        
+        /* --- NỘI DUNG & NÚT XEM THÊM --- */
+        .meaning-wrapper { position: relative; font-size: 0.95rem; color: #333; line-height: 1.5; }
+        .meaning-collapsed {
+            max-height: 120px; overflow: hidden;
+            mask-image: linear-gradient(180deg, #000 60%, transparent);
+            -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
+        }
+        .toggle-btn {
+            display: none; width: 100%; background: #f8f9fa; border: none;
+            border-top: 1px solid #eee; padding: 5px 0;
+            color: var(--primary-color); font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .toggle-btn:hover { background: #e9ecef; }
+
+        /* Style Format Từ điển */
+        .stress { color: #d63384; font-weight: bold; }
+        .example { display: block; margin-top: 4px; color: #666; font-style: italic; font-size: 0.9em; padding-left: 10px; border-left: 2px solid #eee; }
+        .rank-badge { float: right; font-size: 0.75rem; background: #eee; padding: 2px 6px; border-radius: 4px; color: #555; }
+        .word-card .btn-light { border: 1px solid #eee; transition: all 0.2s; }
+        .word-card .btn-light:hover { background-color: #e9ecef; border-color: #cbd3da; transform: translateY(-1px); }
+
+        /* --- NÚT ĐIỀU HƯỚNG (SCROLL BUTTONS) --- */
+        .scroll-btn {
+            position: fixed; right: 30px; width: 45px; height: 45px;
+            border-radius: 50%; border: none; font-size: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: none; z-index: 999; cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .scroll-btn:hover { transform: scale(1.1); }
+        
+        #btnScrollTop { bottom: 85px; background: #343a40; color: white; } /* Nút lên nằm trên */
+        #btnScrollBottom { bottom: 30px; background: var(--primary-color); color: white; } /* Nút xuống nằm dưới */
+
+    </style>
+</head>
+<body>
+
+<div class="sticky-header">
+    <div class="container-fluid px-4">
+        <div class="row align-items-center g-2">
+            <div class="col-12 col-md-3">
+                <div class="fw-bold text-primary fs-5">50,000 Từ vựng tiếng Nga</div>
+                <small class="text-muted" id="statusDisplay">Đang tải...</small>
+            </div>
+            <div class="col-8 col-md-6">
+                <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm từ (nguyên thể) hoặc nghĩa...">
+            </div>
+            <div class="col-4 col-md-3 d-flex">
+                <input type="number" id="rankInput" class="form-control me-2" placeholder="Tìm theo số thứ tự (1-49998)" min="1">
+                <button class="btn btn-primary" onclick="jumpToRank()">Go</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4 py-3">
+    <div id="wordList" class="masonry-container"></div>
+    
+    <div class="text-center py-4">
+        <div id="loadingSpinner" class="spinner-border text-primary" role="status"></div>
+        <button id="loadMoreBtn" class="btn btn-outline-primary px-5 rounded-pill shadow-sm" style="display:none;">Xem thêm</button>
+    </div>
+</div>
+<footer class="bg-white border-top mt-5 pt-5 pb-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5 mb-4">
+                <h5 class="fw-bold text-primary">Về bộ từ điển này</h5>
+                <p class="text-muted">
+                    Trang web này được xây dựng để giúp người Việt Nam tra cứu, học 50.000 từ vựng tiếng Nga phổ biến nhất. 
+                    Dữ liệu được sắp xếp từ xuất hiện nhiều nhất đến ít hơn, tích hợp nghĩa tiếng Việt và các công cụ tra cứu mở rộng.
+                </p>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <h5 class="fw-bold">📊 Nguồn dữ liệu</h5>
+                <ul class="list-unstyled text-muted">
+                    <li class="mb-2">
+                        🔹 <strong>Từ điển tần suất từ:</strong> 
+                        <a href="https://github.com/Digital-Pushkin-Lab/Russian_frequency_lists" target="_blank" class="text-decoration-none"> Digital Pushkin Lab</a>
+                    </li>
+                    <li class="mb-2">
+                        🔹 <strong>Nghĩa tiếng Việt:</strong> 
+                        <a href="https://huggingface.co/datasets/lopmaybay/trungvietstardict" target="_blank" class="text-decoration-none">Từ điển Nga Việt StarDict</a>
+                    </li>
+                    <li>
+                        🔹 <strong>Tra cứu ngoài:</strong> Google Translate, Yandex, Google Images, Vtudien, Youglish, Wikitionary.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <h5 class="fw-bold">👨‍💻 Liên hệ tác giả</h5>
+                <p class="text-muted">
+                    Phát triển bởi: <strong>Phạm Đăng Hiển</strong><br>
+                    <small>lopmaybay@gmail.com</small>
+                </p>
+                <div>
+                    <a href="https://t.me/lopmaybay" class="btn btn-outline-secondary btn-sm me-1">Telegram</a>
+                    <a href="https://www.facebook.com/lopmaybay" class="btn btn-outline-primary btn-sm">Facebook</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center text-muted border-top pt-3 mt-3 small">
+            &copy; 2025 Russian Frequency Dictionary. All rights reserved.
+        </div>
+    </div>
+</footer>
+<button onclick="scrollToTopFn()" id="btnScrollTop" class="scroll-btn" title="Lên đầu trang">⬆</button>
+<button onclick="scrollToTopFn()" id="btnScrollTop" class="scroll-btn" title="Lên đầu trang">⬆</button>
+<button onclick="scrollToBottomFn()" id="btnScrollBottom" class="scroll-btn" title="Xuống cuối trang">⬇</button>
+
+<script>
+    const DATA_URL = 'russian_learning_data(5).json'; 
+    const BATCH_SIZE = 50;
+
+    let fullDataset = [];
+    let currentData = [];
+    let renderedCount = 0;
+
+    async function init() {
+        try {
+            const res = await fetch(DATA_URL);
+            fullDataset = await res.json();
+            currentData = fullDataset;
+            
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('statusDisplay').innerText = `Tổng: ${fullDataset.length.toLocaleString()} từ`;
+            
+            renderNextBatch();
+        } catch (e) {
+            alert("Lỗi tải data: " + e.message);
+        }
+    }
+
+    function cleanRawMeaning(html) {
+        if (!html) return "";
+        let clean = html;
+        clean = clean.replace(/\[p\](.*?)\[\/p\]/g, '<span class="text-secondary fst-italic small"> ($1) </span>');
+        clean = clean.replace(/\[\/?m\d?\]/g, '');
+        clean = clean.replace(/\\/g, '');
+        clean = clean.replace(/~/g, '<b class="text-primary">~</b>');
+        clean = clean.replace(/^(<br>)+|(<br>)+$/g, '');
+        return clean;
+    }
+
+    function renderNextBatch() {
+        const container = document.getElementById('wordList');
+        const batch = currentData.slice(renderedCount, renderedCount + BATCH_SIZE);
+        
+        if (batch.length === 0) {
+            document.getElementById('loadMoreBtn').style.display = 'none';
+            if(renderedCount === 0) container.innerHTML = `<div class="lemma mb-1" onclick="speak('${searchInput.value}')">${searchInput.value} 🔊</div>
+                        <a href="https://translate.google.com/?sl=ru&tl=vi&text=${searchInput.value}" target="_blank"> Tra Google dịch |</a>
+                        <a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${searchInput.value}" target="_blank"> Tra Vtudien |<a/>
+                        <a href="https://youglish.com/pronounce/${searchInput.value}/russian" target="_blank"> Tra Youglish |<a/>
+                        <a href="https://ru.wiktionary.org/wiki/${searchInput.value}" target="_blank"> Tra Wikitionary <a/><br\>  
+                        <p class="text-center w-100">Không tìm thấy.</p> <\div>`;
+            return;
+        }
+
+        let html = '';
+        batch.forEach((item, index) => {
+            const realRank = fullDataset.indexOf(item) + 1;
+            const uniqueId = `word-${renderedCount + index}`;
+            
+            let hasMeaning = !!item.meaning;
+            let rawContent = item.meaning ? cleanRawMeaning(item.meaning) : '';
+            let meaningHtml = rawContent || `<div class="text-muted small mt-2">Chưa có dữ liệu nghĩa. Hãy tự tra thêm!</div>`;
+
+            let isLongContent = hasMeaning && item.meaning.length > 250; 
+            let collapseClass = isLongContent ? 'meaning-collapsed' : '';
+            let btnDisplay = isLongContent ? 'block' : 'none';
+
+            // Tạo link tìm kiếm
+            const yandexUrl = `https://yandex.ru/search/?text=${encodeURIComponent(item.lemma)}`;
+            const googleUrl = `https://www.google.com/search?q=từ+vựng+tiếng+nga+${encodeURIComponent(item.lemma)}`;
+            const googleImgUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(item.lemma)}`;
+
+            html += `
+                <div class="word-card ${hasMeaning?'':'no-meaning'}">
+                    <div class="p-3">
+                        <span class="rank-badge">#${realRank}</span>
+                        <div class="lemma mb-1" onclick="speak('${item.lemma}')">${item.lemma} 🔊</div>
+
+                        <div id="content-${uniqueId}" class="meaning-wrapper ${collapseClass} mb-3">
+                            ${meaningHtml}
+                        </div>
+
+                        <div class="d-flex gap-2 pt-2 border-top">
+                            <a href="${yandexUrl}" target="_blank" class="btn btn-sm btn-light flex-fill text-danger fw-bold">Yandex</a>
+                            <a href="${googleUrl}" target="_blank" class="btn btn-sm btn-light flex-fill text-primary fw-bold">Google</a>
+                            <a href="${googleImgUrl}" target="_blank" class="btn btn-sm btn-light text-secondary">🖼️</a>
+                            
+                        </div>
+                        <a href="https://translate.google.com/?sl=ru&tl=vi&text=${item.lemma}" target="_blank"> Google Translate |</a>
+                        <a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${item.lemma}" target="_blank"> Vtudien |<a/>
+                        <a href="https://youglish.com/pronounce/${item.lemma}/russian" target="_blank"> Youglish |<a/>
+                        <a href="https://ru.wiktionary.org/wiki/${item.lemma}" target="_blank"> Wikitionary <a/><br\>  
+                    </div>
+                    
+                    <button id="btn-${uniqueId}" class="toggle-btn" style="display:${btnDisplay}" 
+                            onclick="toggleCard('${uniqueId}')">
+                        🔽 Xem chi tiết
+                    </button>
+                </div>
+            `;
+        });
+
+        container.insertAdjacentHTML('beforeend', html);
+        renderedCount += batch.length;
+
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        loadMoreBtn.style.display = (renderedCount >= currentData.length) ? 'none' : 'inline-block';
+        loadMoreBtn.innerText = `Tải thêm (${renderedCount}/${currentData.length})`;
+    }
+
+    window.toggleCard = function(id) {
+        const content = document.getElementById(`content-${id}`);
+        const btn = document.getElementById(`btn-${id}`);
+        if (content.classList.contains('meaning-collapsed')) {
+            content.classList.remove('meaning-collapsed');
+            btn.innerHTML = '🔼 Thu gọn';
+            btn.style.background = '#e9ecef';
+        } else {
+            content.classList.add('meaning-collapsed');
+            btn.innerHTML = '🔽 Xem chi tiết';
+            btn.style.background = '#f8f9fa';
+            content.scrollIntoView({behavior: "smooth", block: "center"});
+        }
+    };
+
+    const searchInput = document.getElementById('searchInput');
+    let timeout = null;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            const k = e.target.value.toLowerCase().trim();
+            document.getElementById('wordList').innerHTML = '';
+            renderedCount = 0;
+            if(!k) currentData = fullDataset;
+            else currentData = fullDataset.filter(i => 
+                (i.lemma && i.lemma.toLowerCase().includes(k)) || 
+                (i.meaning && i.meaning.toLowerCase().includes(k))
+            );
+            renderNextBatch();
+        }, 300);
+    });
+
+    document.getElementById('loadMoreBtn').addEventListener('click', renderNextBatch);
+
+    window.jumpToRank = function() {
+        const r = parseInt(document.getElementById('rankInput').value);
+        if(!r || r < 1) return;
+        document.getElementById('wordList').innerHTML = '';
+        currentData = fullDataset;
+        renderedCount = Math.min(r - 1, fullDataset.length - 1);
+        renderNextBatch();
+        window.scrollTo(0,0);
+        searchInput.value = '';
+    }
+
+    window.speak = function(t) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(t);
+        u.lang = 'ru-RU';
+        window.speechSynthesis.speak(u);
+    }
+
+    // --- XỬ LÝ SCROLL NÚT ĐIỀU HƯỚNG ---
+    
+    // Hàm cuộn lên đầu
+    window.scrollToTopFn = function() {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    // Hàm cuộn xuống cuối
+    window.scrollToBottomFn = function() {
+        window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
+    }
+
+    // Logic ẩn hiện nút
+    window.onscroll = () => {
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const docHeight = document.body.scrollHeight;
+
+        const btnTop = document.getElementById('btnScrollTop');
+        const btnBottom = document.getElementById('btnScrollBottom');
+
+        // Hiện nút Lên nếu cuộn xuống quá 300px
+        btnTop.style.display = scrollY > 300 ? 'block' : 'none';
+
+        // Hiện nút Xuống nếu chưa chạm đáy
+        // (Trừ đi 100px để có độ trễ hợp lý)
+        if (windowHeight + scrollY < docHeight - 100) {
+            btnBottom.style.display = 'block';
+        } else {
+            btnBottom.style.display = 'none';
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>
