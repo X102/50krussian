@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>50 Nghìn Từ vựng Tiếng Nga</title>
+    <title>Từ Điển Tần Suất Tiếng Nga (Full Features)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root { --primary-color: #0d6efd; --bg-color: #f0f2f5; }
@@ -74,6 +74,44 @@
         #btnScrollTop { bottom: 85px; background: #343a40; color: white; } /* Nút lên nằm trên */
         #btnScrollBottom { bottom: 30px; background: var(--primary-color); color: white; } /* Nút xuống nằm dưới */
 
+        #selectionSpeakBtn::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #212529 transparent transparent transparent; /* Màu đen trùng màu nút */
+        }
+
+        /* Hiệu ứng thẻ đang được đọc (Playlist) */
+        .word-card.reading-active {
+            border: 2px solid #0d6efd;
+            background-color: #e7f1ff !important;
+            box-shadow: 0 0 15px rgba(13, 110, 253, 0.3);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        /* Nút đọc toàn bộ trên Header */
+        #btnPlayAll {
+            min-width: 45px;
+            transition: all 0.3s;
+        }
+        .playing-state {
+            background-color: #dc3545 !important; /* Màu đỏ khi đang chạy để bấm dừng */
+            border-color: #dc3545 !important;
+            color: white !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
     </style>
 </head>
 <body>
@@ -85,12 +123,16 @@
                 <div class="fw-bold text-primary fs-5">50,000 Từ vựng tiếng Nga</div>
                 <small class="text-muted" id="statusDisplay">Đang tải...</small>
             </div>
-            <div class="col-8 col-md-6">
-                <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm từ hoặc nghĩa...">
+            <div class="col-6 col-md-6">
+                <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm từ (nguyên thể) hoặc nghĩa...">
             </div>
             <div class="col-4 col-md-3 d-flex">
-                <input type="number" id="rankInput" class="form-control me-2" placeholder="STT (1-49998)" min="1">
-                <button class="btn btn-primary" onclick="jumpToRank()">Go</button>
+            <button id="btnPlayAll" class="btn btn-outline-success me-2" onclick="togglePlayAll()" title="Đọc toàn bộ trang">
+                ▶
+            </button>
+            
+            <input type="number" id="rankInput" class="form-control me-2" placeholder="STT" min="1">
+            <button class="btn btn-primary" onclick="jumpToRank()">Go</button>
             </div>
         </div>
     </div>
@@ -153,7 +195,50 @@
 <button onclick="scrollToTopFn()" id="btnScrollTop" class="scroll-btn" title="Lên đầu trang">⬆</button>
 <button onclick="scrollToTopFn()" id="btnScrollTop" class="scroll-btn" title="Lên đầu trang">⬆</button>
 <button onclick="scrollToBottomFn()" id="btnScrollBottom" class="scroll-btn" title="Xuống cuối trang">⬇</button>
+<button id="selectionSpeakBtn" class="btn btn-dark btn-sm shadow rounded-pill" 
+        style="display: none; position: fixed; z-index: 9999; padding: 5px 15px; font-weight: bold; top: 0; left: 0;">
+    🔊 Nghe
+</button>
+<button onclick="openSettings()" class="btn btn-light shadow rounded-circle border" 
+        style="position: fixed; bottom: 30px; left: 30px; width: 50px; height: 50px; z-index: 1001;" 
+        title="Cài đặt giọng đọc">
+    ⚙️
+</button>
 
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">🎧 Cài đặt Giọng đọc</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">🇷🇺 Giọng Tiếng Nga</label>
+                    <select id="ruVoiceSelect" class="form-select" onchange="saveVoiceSettings()">
+                        <option value="">-- Mặc định --</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">🇻🇳 Giọng Tiếng Việt</label>
+                    <select id="viVoiceSelect" class="form-select" onchange="saveVoiceSettings()">
+                        <option value="">-- Mặc định --</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tốc độ đọc: <span id="rateValue">1.0</span>x</label>
+                    <input type="range" class="form-range" min="0.5" max="1.5" step="0.1" id="rateRange" value="1.0" oninput="saveVoiceSettings()">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">Đã xong</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const DATA_URL = 'russian_learning_data(5).json'; 
     const BATCH_SIZE = 50;
@@ -161,6 +246,7 @@
     let fullDataset = [];
     let currentData = [];
     let renderedCount = 0;
+
 
     async function init() {
         try {
@@ -175,6 +261,82 @@
         } catch (e) {
             alert("Lỗi tải data: " + e.message);
         }
+    }
+
+            // --- QUẢN LÝ GIỌNG ĐỌC (VOICE SETTINGS) ---
+    let availableVoices = [];
+    let selectedRuVoiceURI = localStorage.getItem('ruVoiceURI') || "";
+    let selectedViVoiceURI = localStorage.getItem('viVoiceURI') || "";
+    let speechRate = parseFloat(localStorage.getItem('speechRate')) || 1.0;
+
+    // Cập nhật hiển thị thanh trượt tốc độ
+    document.getElementById('rateRange').value = speechRate;
+    document.getElementById('rateValue').innerText = speechRate;
+
+    // 1. Hàm lấy danh sách giọng từ trình duyệt
+    function populateVoiceList() {
+        availableVoices = window.speechSynthesis.getVoices();
+        
+        const ruSelect = document.getElementById('ruVoiceSelect');
+        const viSelect = document.getElementById('viVoiceSelect');
+
+        // Xóa danh sách cũ (trừ option đầu tiên)
+        ruSelect.innerHTML = '<option value="">-- Mặc định (Hệ thống) --</option>';
+        viSelect.innerHTML = '<option value="">-- Mặc định (Hệ thống) --</option>';
+
+        availableVoices.forEach((voice) => {
+            const option = document.createElement('option');
+            // Hiển thị tên giọng + (Ngôn ngữ)
+            option.textContent = `${voice.name} (${voice.lang})`;
+            option.value = voice.voiceURI; // Dùng URI để định danh chính xác
+
+            // Phân loại vào dropdown tương ứng
+            if (voice.lang.includes('ru')) {
+                ruSelect.appendChild(option);
+                if (voice.voiceURI === selectedRuVoiceURI) option.selected = true;
+            } 
+            else if (voice.lang.includes('vi')) {
+                viSelect.appendChild(option);
+                if (voice.voiceURI === selectedViVoiceURI) option.selected = true;
+            }
+        });
+    }
+
+    // 2. Sự kiện chờ trình duyệt load giọng (Chrome cần cái này)
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+    // Gọi ngay lập tức phòng khi giọng đã load xong rồi
+    populateVoiceList();
+
+    // 3. Lưu cài đặt khi người dùng thay đổi
+    window.saveVoiceSettings = function() {
+        const ruSelect = document.getElementById('ruVoiceSelect');
+        const viSelect = document.getElementById('viVoiceSelect');
+        const rateRange = document.getElementById('rateRange');
+
+        selectedRuVoiceURI = ruSelect.value;
+        selectedViVoiceURI = viSelect.value;
+        speechRate = parseFloat(rateRange.value);
+
+        // Cập nhật UI text
+        document.getElementById('rateValue').innerText = speechRate;
+
+        // Lưu vào bộ nhớ trình duyệt
+        localStorage.setItem('ruVoiceURI', selectedRuVoiceURI);
+        localStorage.setItem('viVoiceURI', selectedViVoiceURI);
+        localStorage.setItem('speechRate', speechRate);
+        
+        // Test thử giọng ngay khi chọn (Optional)
+        // window.speechSynthesis.cancel();
+    }
+
+    // 4. Mở modal cài đặt
+    window.openSettings = function() {
+        // Cần Bootstrap JS để mở modal
+        const myModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+        populateVoiceList(); // Refresh lại list cho chắc
+        myModal.show();
     }
 
     function cleanRawMeaning(html) {
@@ -195,13 +357,15 @@
         if (batch.length === 0) {
             document.getElementById('loadMoreBtn').style.display = 'none';
             if(renderedCount === 0) container.innerHTML = `<div class="lemma mb-1" onclick="speak('${searchInput.value}')">${searchInput.value} 🔊</div>
-                        <a href="https://translate.google.com/?sl=ru&tl=vi&text=${searchInput.value}" target="_blank"> Tra Google dịch |</a>
+            <div class="lemma mb-1" onclick="speak('${searchInput.value}', '${searchInput.value}')">${searchInput.value} <span style="font-size:0.8em">🔊</span></div>            
+            <a href="https://translate.google.com/?sl=ru&tl=vi&text=${searchInput.value}" target="_blank"> Tra Google dịch |</a>
                         <a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${searchInput.value}" target="_blank"> Vtudien |<a/>
                         <a href="https://youglish.com/pronounce/${searchInput.value}/russian" target="_blank"> Youglish |<a/>
                         <a href="https://ru.wiktionary.org/wiki/${searchInput.value}" target="_blank"> Wikitionary |<a/>
                         <a href="https://yandex.ru/search/?text=${searchInput.value}" target="_blank"> Yandex |<a/>
                         <a href="https://www.google.com/search?q=từ+vựng+tiếng+nga+${searchInput.value}" target="_blank"> Google |<a/> 
-                        <a href="https://www.google.com/search?tbm=isch&q=${searchInput.value}" target="_blank"> Google Images <a/><br\>    
+                        <a href="https://www.google.com/search?tbm=isch&q=${searchInput.value}" target="_blank"> Google Images |<a/>
+                        <a href="https://tatoeba.org/vi/sentences/search?from=rus&query=${searchInput.value}&to=vie" target="_blank"> Tatoeba <\a>    <br\>    
                         <p class="text-center w-100">Không tìm thấy.</p> <\div>`;
             return;
         }
@@ -210,7 +374,7 @@
         batch.forEach((item, index) => {
             const realRank = fullDataset.indexOf(item) + 1;
             const uniqueId = `word-${renderedCount + index}`;
-            
+            // ID duy nhất được tạo ra ở đây
             let hasMeaning = !!item.meaning;
             let rawContent = item.meaning ? cleanRawMeaning(item.meaning) : '';
             let meaningHtml = rawContent || `<div class="text-muted small mt-2">Chưa có dữ liệu nghĩa. Hãy tự tra thêm!</div>`;
@@ -225,16 +389,18 @@
             const googleImgUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(item.lemma)}`;
 
             html += `
-                <div class="word-card ${hasMeaning?'':'no-meaning'}">
+                <div id="${uniqueId}" class="word-card ${hasMeaning?'':'no-meaning'}">
                     <div class="p-3">
                         <span class="rank-badge">#${realRank}</span>
-                        <div class="lemma mb-1" onclick="speak('${item.lemma}')">${item.lemma} 🔊</div>
-
+                        <div class="lemma mb-1" onclick="speak('${item.lemma}', '${item.lemma}', '${item.lemma}')">
+                            ${item.lemma} <span style="font-size:0.8em">🔊</span>
+                        </div>
                         <div id="content-${uniqueId}" class="meaning-wrapper ${collapseClass} mb-3">
                             ${meaningHtml}
                         </div>
 
                         <div class="d-flex gap-2 pt-2 border-top">
+                            <button onclick="readSingleCard('word-${renderedCount + index}')" class="btn btn-sm btn-info text-white fw-bold" title="Đọc toàn bộ thẻ này">📖</button>
                             <a href="${yandexUrl}" target="_blank" class="btn btn-sm btn-light flex-fill text-danger fw-bold">Yandex</a>
                             <a href="${googleUrl}" target="_blank" class="btn btn-sm btn-light flex-fill text-primary fw-bold">Google</a>
                             <a href="${googleImgUrl}" target="_blank" class="btn btn-sm btn-light text-secondary">🖼️</a>
@@ -243,9 +409,10 @@
                         <a href="https://translate.google.com/?sl=ru&tl=vi&text=${item.lemma}" target="_blank"> Google Translate |</a>
                         <a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${item.lemma}" target="_blank"> Vtudien |<a/>
                         <a href="https://youglish.com/pronounce/${item.lemma}/russian" target="_blank"> Youglish |<a/>
-                        <a href="https://ru.wiktionary.org/wiki/${item.lemma}" target="_blank"> Wikitionary <a/><br\>  
+                        <a href="https://ru.wiktionary.org/wiki/${item.lemma}" target="_blank"> Wikitionary |<a/>
+                        <a href="https://tatoeba.org/vi/sentences/search?from=rus&query=${item.lemma}&to=vie" target="_blank"> Tatoeba <\a>    <br\>    
+                       <br\>  
                     </div>
-                    
                     <button id="btn-${uniqueId}" class="toggle-btn" style="display:${btnDisplay}" 
                             onclick="toggleCard('${uniqueId}')">
                         🔽 Xem chi tiết
@@ -307,25 +474,19 @@
         searchInput.value = '';
     }
 
-    window.speak = function(t) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(t);
-        u.lang = 'ru-RU';
-        window.speechSynthesis.speak(u);
-    }
+    // --- XỬ LÝ ĐỌC ĐA NGÔN NGỮ (MIXED LANGUAGE) ---
+
+ 
 
     // --- XỬ LÝ SCROLL NÚT ĐIỀU HƯỚNG ---
-    
     // Hàm cuộn lên đầu
     window.scrollToTopFn = function() {
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
-
     // Hàm cuộn xuống cuối
     window.scrollToBottomFn = function() {
         window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
     }
-
     // Logic ẩn hiện nút
     window.onscroll = () => {
         const scrollY = window.scrollY;
@@ -347,10 +508,477 @@
         }
     }
 
+// --- QUẢN LÝ TRẠNG THÁI ĐỌC (GLOBAL STATE) ---
+let isPlayingAll = false;
+let currentCardIndex = -1;
+let speechQueue = []; // Hàng đợi các đoạn cần đọc
+
+// Biến toàn cục để giữ utterance (Fix lỗi Chrome bị ngắt giữa chừng)
+window.currentUtterance = null;
+
+function speakSegments(segments, index = 0, onComplete = null) {
+    // Kiểm tra cờ dừng
+    if (!isPlayingAll && onComplete) return;
+
+    if (index >= segments.length) {
+        window.currentUtterance = null; // Giải phóng bộ nhớ
+        if (onComplete) onComplete();
+        return;
+    }
+
+    const segment = segments[index];
+    if (!segment.text || segment.text.trim().length === 0) {
+        speakSegments(segments, index + 1, onComplete);
+        return;
+    }
+
+    const u = new SpeechSynthesisUtterance(segment.text);
+    u.lang = segment.lang;
+    
+    // Áp dụng giọng đọc đã chọn (như code trước)
+    let targetVoice = null;
+    if (u.lang === 'ru-RU' && selectedRuVoiceURI) {
+        targetVoice = availableVoices.find(v => v.voiceURI === selectedRuVoiceURI);
+    } else if (u.lang === 'vi-VN' && selectedViVoiceURI) {
+        targetVoice = availableVoices.find(v => v.voiceURI === selectedViVoiceURI);
+    }
+    if (targetVoice) u.voice = targetVoice;
+
+    u.rate = (u.lang === 'vi-VN') ? speechRate * 0.9 : speechRate;
+
+    // --- QUAN TRỌNG: GÁN VÀO BIẾN TOÀN CỤC ---
+    window.currentUtterance = u; 
+
+    u.onend = () => {
+        // Đệ quy đoạn tiếp theo
+        speakSegments(segments, index + 1, onComplete);
+    };
+    
+    u.onerror = (e) => { 
+        // Nếu lỗi 'interrupted' mà do hệ thống tự ngắt để chuyển câu -> cứ đi tiếp
+        // Nếu lỗi do người dùng bấm Stop -> hàm kiểm tra !isPlayingAll ở đầu sẽ chặn lại
+        console.warn("Lỗi TTS (bỏ qua và đọc tiếp):", e.error);
+        speakSegments(segments, index + 1, onComplete); 
+    };
+
+    window.speechSynthesis.speak(u);
+}
+
+window.speak = function(text, lemma = "", stem = "", onComplete = null) {
+    window.speechSynthesis.cancel();
+    
+    const cleanedText = cleanTextForSpeech(text, lemma, stem);
+    
+    // LOG ĐỂ DEBUG
+    console.log("Input:", text.substring(0, 50) + "...");
+    console.log("Cleaned:", cleanedText);
+
+    // BẢO VỆ: Nếu sau khi clean mà không còn gì -> Next luôn
+    if (cleanedText.length === 0) {
+        console.warn("Văn bản rỗng, bỏ qua.");
+        if (onComplete) onComplete();
+        return;
+    }
+
+    const segments = parseMixedText(cleanedText);
+    
+    // BẢO VỆ: Nếu parse ra mảng rỗng
+    if (segments.length === 0) {
+        if (onComplete) onComplete();
+        return;
+    }
+
+    speakSegments(segments, 0, onComplete);
+}
+
+window.readSingleCard = function(cardId) {
+    stopPlayAll();
+    
+    const card = document.getElementById(cardId);
+    if (!card) {
+        console.error("Không tìm thấy thẻ có ID:", cardId); // Log lỗi nếu quên gán ID
+        return;
+    }
+
+    // Lấy dữ liệu sạch bằng hàm tiện ích đã viết ở bước trước
+    const data = getDataFromCard(card);
+
+    console.log("Đang đọc thẻ:", cardId);
+    console.log("Nội dung:", data.fullText);
+
+    isPlayingAll = true; 
+    speak(data.fullText, data.lemma, data.stem, () => { isPlayingAll = false; });
+}
+
+// Đọc Playlist (Đệ quy)
+
+function playNextCardRecursive() {
+    if (!isPlayingAll) return;
+
+    const allCards = document.querySelectorAll('.word-card');
+    
+    if (currentCardIndex >= allCards.length) {
+        // ... (Giữ nguyên logic tải thêm trang) ...
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (loadMoreBtn && loadMoreBtn.style.display !== 'none') {
+            loadMoreBtn.click();
+            setTimeout(() => playNextCardRecursive(), 1500); // Tăng thời gian chờ lên 1.5s cho chắc
+            return;
+        } else {
+            stopPlayAll();
+            alert("Đã đọc hết!");
+            return;
+        }
+    }
+
+    const card = allCards[currentCardIndex];
+    
+    // Highlight & Scroll
+    document.querySelectorAll('.reading-active').forEach(el => el.classList.remove('reading-active'));
+    card.classList.add('reading-active');
+    card.scrollIntoView({behavior: "smooth", block: "center"});
+
+    // LOGIC MỚI: Lấy fullText
+    const data = getDataFromCard(card);
+    
+    // Đọc
+    speak(data.fullText, data.lemma, data.stem, function() {
+        currentCardIndex++;
+        // Thêm delay nhỏ 0.5s giữa các thẻ cho tự nhiên
+        if (isPlayingAll) {
+            setTimeout(() => playNextCardRecursive(), 500); 
+        }
+    });
+}
+
+// 3. HÀM ĐỌC TOÀN BỘ TRANG (PLAYLIST)
+window.togglePlayAll = function() {
+    const btn = document.getElementById('btnPlayAll');
+    
+    if (isPlayingAll) {
+        stopPlayAll();
+    } else {
+        startPlayAll();
+    }
+}
+
+/////////////////////////
+function startPlayAll() {
+    isPlayingAll = true;
+    const btn = document.getElementById('btnPlayAll');
+    btn.innerHTML = "⏹"; // Biểu tượng Stop
+    btn.classList.add('playing-state');
+    
+    // Bắt đầu từ thẻ đầu tiên hoặc thẻ đang dở
+    const allCards = document.querySelectorAll('.word-card');
+    if (allCards.length === 0) return;
+
+    // Reset index nếu chưa bắt đầu
+    if (currentCardIndex < 0) currentCardIndex = 0;
+
+    playNextCardRecursive();
+}
+
+function stopPlayAll() {
+    isPlayingAll = false;
+    window.speechSynthesis.cancel();
+    
+    const btn = document.getElementById('btnPlayAll');
+    btn.innerHTML = "▶";
+    btn.classList.remove('playing-state');
+    
+    // Xóa highlight cũ
+    document.querySelectorAll('.reading-active').forEach(el => el.classList.remove('reading-active'));
+}
+
+function cleanTextForSpeech(text, lemma = "", stem = "") {
+    if (!text) return "";
+    let clean = text;
+
+    // 1. BIẾN ĐỔI CẤU TRÚC THÀNH CÂU NGẮN
+    // Thay thế xuống dòng và các icon bằng dấu chấm để ngắt câu
+    clean = clean.replace(/[\r\n]+/g, ". "); 
+    clean = clean.replace(/[🔊🔹👉•|►]/g, ". "); // Biến icon thành dấu chấm
+
+    // 2. Xử lý dấu ngã ~ (Logic cũ)
+    if (lemma) {
+        clean = clean.replace(/~/g, function(match, offset, fullString) {
+            const nextChar = fullString[offset + 1];
+            const isSuffix = nextChar && /[а-яА-ЯёЁ]/.test(nextChar);
+            return (isSuffix && stem) ? stem : lemma;
+        });
+    }
+
+    // 3. Xóa các thẻ meta ngắn
+    clean = clean.replace(/\([а-яА-ЯёЁ\s.,]{1,15}\)/g, " ");
+
+    // 4. Dọn dẹp dấu chấm thừa (Quan trọng)
+    // Ví dụ: ".. . ." -> "."
+    clean = clean.replace(/\s*[.;:]\s*/g, ". "); 
+    clean = clean.replace(/\.\s*\./g, "."); 
+    clean = clean.replace(/\s+/g, " ").trim();
+    // clean = clean.replace(/\d\[a-z]/, " ").trim();
+    
+    return clean;
+}
+
+// Hàm chia nhỏ văn bản dài thành các câu ngắn hơn
+function splitSmart(text, lang) {
+    // Tách theo dấu chấm, chấm phẩy, hai chấm, chấm than, chấm hỏi
+    // Regex này giữ lại dấu câu để đọc cho tự nhiên
+    const rawSegments = text.split(/([.;:?!])/); 
+    const results = [];
+    
+    let buffer = "";
+    
+    for (let part of rawSegments) {
+        buffer += part;
+        // Nếu buffer đã đủ dài (trên 20 ký tự) hoặc gặp dấu câu kết thúc -> Đẩy vào mảng
+        // Giới hạn 150 ký tự để an toàn tuyệt đối
+        if (buffer.length > 20 && /[.;:?!]/.test(part) || buffer.length > 150) {
+            if (buffer.trim()) results.push({text: buffer.trim(), lang: lang});
+            buffer = "";
+        }
+    }
+    // Đẩy phần còn dư
+    if (buffer.trim()) results.push({text: buffer.trim(), lang: lang});
+    
+    return results;
+}
+
+function parseMixedText(text) {
+    if (!text) return [];
+
+    // Bước 1: Tách sơ bộ Nga/Việt (như cũ)
+    const rawParts = [];
+    let currentBuffer = "";
+    let currentLang = null;
+
+    for (let char of text) {
+        const code = char.charCodeAt(0);
+        const isRussian = (code >= 1024 && code <= 1279) || code === 1025 || code === 1105; 
+        const charLang = isRussian ? 'ru-RU' : 'vi-VN';
+        const isNeutral = /[0-9\s.,!?;:()"'`\-]/.test(char);
+
+        if (isNeutral) {
+            currentBuffer += char;
+            continue;
+        }
+
+        if (currentLang === null) currentLang = charLang;
+
+        if (charLang !== currentLang) {
+            if (currentBuffer.trim().length > 0) {
+                rawParts.push({ text: currentBuffer, lang: currentLang });
+            }
+            currentBuffer = char;
+            currentLang = charLang;
+        } else {
+            currentBuffer += char;
+        }
+    }
+    if (currentBuffer.trim().length > 0) {
+        rawParts.push({ text: currentBuffer, lang: currentLang || 'vi-VN' });
+    }
+
+    // Bước 2: Băm nhỏ các phần Nga/Việt thành các câu ngắn (Smart Split)
+    // Đây là bước FIX lỗi thẻ dài
+    const finalSegments = [];
+    for (let part of rawParts) {
+        const subSegments = splitSmart(part.text, part.lang);
+        finalSegments.push(...subSegments);
+    }
+    
+    return finalSegments;
+}
+
+function splitLongText(text, lang) {
+    const MAX_LENGTH = 150; // Giới hạn ký tự mỗi lần đọc (Google TTS thích < 200)
+    
+    // Nếu ngắn thì trả về luôn
+    if (text.length <= MAX_LENGTH) return [{text: text, lang: lang}];
+
+    const results = [];
+    let remaining = text;
+
+    while (remaining.length > 0) {
+        if (remaining.length <= MAX_LENGTH) {
+            results.push({text: remaining, lang: lang});
+            break;
+        }
+
+        // Tìm điểm cắt hợp lý (dấu chấm, phẩy) gần mốc 150 nhất
+        // Tìm dấu chấm câu trong khoảng từ ký tự 50 đến 150
+        let splitIndex = -1;
+        const punctuation = ['.', ';', '?', '!', ',', ')'];
+        
+        // Cố gắng tìm dấu câu ở cuối đoạn cho phép
+        for (let i = MAX_LENGTH; i > 50; i--) {
+            if (punctuation.includes(remaining[i])) {
+                splitIndex = i + 1; // Cắt sau dấu câu
+                break;
+            }
+        }
+
+        // Nếu không tìm thấy dấu câu, đành cắt tại khoảng trắng
+        if (splitIndex === -1) {
+            splitIndex = remaining.lastIndexOf(' ', MAX_LENGTH);
+        }
+
+        // Nếu vẫn không tìm thấy (từ quá dài), cắt cứng tại MAX_LENGTH
+        if (splitIndex === -1) splitIndex = MAX_LENGTH;
+
+        // Cắt và đẩy vào mảng
+        const chunk = remaining.substring(0, splitIndex).trim();
+        if (chunk) results.push({text: chunk, lang: lang});
+        
+        remaining = remaining.substring(splitIndex).trim();
+    }
+
+    return results;
+}
+
+    function hideButton() {
+        const btn = document.getElementById('selectionSpeakBtn');
+        if (btn) btn.style.display = 'none';
+    }
+// Hàm tiện ích: Trích xuất Lemma và Stem từ một thẻ Word Card
+// Hàm tiện ích: Trích xuất dữ liệu sạch để đọc
+function getDataFromCard(card) {
+    // 1. Lấy Lemma (Từ vựng)
+    const lemmaEl = card.querySelector('.lemma');
+    // Lấy text, xóa icon loa và số 
+    const lemma = lemmaEl ? lemmaEl.innerText.replace(/[🔊0-9]/g, '').trim() : "";
+    
+    // Mặc định Stem = Lemma
+    let stem = lemma; 
+
+    // 2. Lấy nội dung nghĩa (Meaning)
+    const meaningEl = card.querySelector('.meaning-wrapper');
+    let meaningText = "";
+
+    if (meaningEl) {
+        // A. Tìm Stem trong nghĩa (Logic cũ)
+        const rawContent = meaningEl.innerText;
+        const stemMatch = rawContent.match(/\(([а-яА-ЯёЁ]+)\|[а-яА-ЯёЁ]*\)/);
+        if (stemMatch && stemMatch[1]) {
+            stem = stemMatch[1];
+        }
+
+        // B. Lấy nội dung để đọc
+        // Clone riêng phần nghĩa để xử lý
+        const meaningClone = meaningEl.cloneNode(true);
+        
+        // Xóa các phần không nên đọc trong nghĩa (nếu có nút thừa)
+        // Ví dụ: Xóa dòng "Chưa có nghĩa..." nếu bạn không muốn nghe nó
+        // const noDataMsg = meaningClone.querySelector('.text-muted');
+        // if (noDataMsg && noDataMsg.innerText.includes('Chưa có dữ liệu')) meaningClone.remove();
+
+        meaningText = meaningClone.innerText;
+    }
+    
+    // 3. Ghép thành văn bản hoàn chỉnh để đọc
+    // Nếu nghĩa trống hoặc là "Chưa có dữ liệu...", chỉ đọc từ vựng thôi
+    let fullTextToRead = lemma;
+    if (meaningText && !meaningText.includes("Chưa có dữ liệu")) {
+        fullTextToRead = lemma + ". " + meaningText; 
+    }
+
+    return { 
+        lemma: lemma, 
+        stem: stem,
+        fullText: fullTextToRead 
+    };
+}
+
+//     // --- SỰ KIỆN BÔI ĐEN (ĐÃ CẬP NHẬT TÌM GỐC TỪ | ) ---
+document.addEventListener('mouseup', function(e) {
+    setTimeout(() => {
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+        
+        // Luôn tìm nút hiện tại (để tránh lỗi null)
+        const currentBtn = document.getElementById('selectionSpeakBtn');
+        if (!currentBtn) return;
+
+        if (text.length > 0) {
+            const range = selection.getRangeAt(0);
+            
+            // --- [LOGIC MỚI] TÌM GỐC TỪ (ROOT/STEM) ---
+            let rootWord = "";
+            
+            // 1. Tìm thẻ cha chứa đoạn bôi đen
+            let container = range.commonAncestorContainer;
+            if (container.nodeType === 3) container = container.parentNode; 
+            const parentCard = container.closest('.word-card');
+            if (parentCard) {
+                // SỬ DỤNG HÀM TIỆN ÍCH MỚI
+                const data = getDataFromCard(parentCard);
+                
+                // Gán sự kiện click
+                const handleSpeakClick = function(event) {
+                    event.preventDefault(); event.stopPropagation();
+                    
+                    // Truyền cả lemma và stem vào
+                    speak(text, data.lemma, data.stem); 
+                };
+            }
+            // // ---------------------------------------------
+
+            const rect = range.getBoundingClientRect();
+            
+            // Clone nút để xóa sự kiện cũ
+            const newBtn = currentBtn.cloneNode(true);
+            currentBtn.parentNode.replaceChild(newBtn, currentBtn);
+            
+            newBtn.innerHTML = `🔊 Đọc đoạn này`;
+            
+            // Tính toán vị trí hiển thị
+            const topPos = rect.top - 45;
+            const leftPos = rect.left + (rect.width / 2) - (newBtn.offsetWidth / 2);
+            
+            newBtn.style.left = leftPos + 'px';
+            if (topPos > 0) {
+                newBtn.style.top = topPos + 'px';
+            } else {
+                newBtn.style.top = (rect.bottom + 10) + 'px';
+            }
+            
+            newBtn.style.display = 'block';
+
+            // Gán sự kiện click với gốc từ (rootWord) chuẩn xác vừa tìm được
+            const handleSpeakClick = function(event) {
+                event.preventDefault(); 
+                event.stopPropagation();
+                
+                // Gọi hàm speak với rootWord đã xử lý
+                speak(text, rootWord); 
+            };
+
+            newBtn.addEventListener('click', handleSpeakClick);
+            newBtn.addEventListener('touchstart', handleSpeakClick, {passive: false});
+
+        } else {
+            if (e.target.id !== 'selectionSpeakBtn') {
+                const btn = document.getElementById('selectionSpeakBtn');
+                if(btn) btn.style.display = 'none';
+            }
+        }
+    }, 10);
+});
+
+    // Ẩn nút khi nhấn chuột xuống bất kỳ chỗ nào khác
+    document.addEventListener('mousedown', function(e) {
+        if (e.target.id !== 'selectionSpeakBtn') {
+            hideButton();
+        }
+    });
+
+    // Ẩn khi cuộn trang
+    window.addEventListener('scroll', hideButton);
+
     init();
 </script>
 
 </body>
-
 </html>
-
