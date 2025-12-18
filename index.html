@@ -372,8 +372,8 @@
         
         if (batch.length === 0) {
             document.getElementById('loadMoreBtn').style.display = 'none';
-            if(renderedCount === 0) container.innerHTML = `<div class="lemma mb-1" onclick="speak('${searchInput.value}')">${searchInput.value} 🔊</div>
-            <div class="lemma mb-1" onclick="speak('${searchInput.value}', '${searchInput.value}')">${searchInput.value} <span style="font-size:0.8em">🔊</span></div>            
+            if(renderedCount === 0) container.innerHTML = `
+            <div class="lemma mb-1" onclick="speak('${searchInput.value}')">${searchInput.value} <span style="font-size:0.8em">🔊</span></div>            
             <a href="https://translate.google.com/?sl=ru&tl=vi&text=${searchInput.value}" target="_blank"> Tra Google dịch |</a>
                         <a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${searchInput.value}" target="_blank"> Vtudien |<a/>
                         <a href="https://youglish.com/pronounce/${searchInput.value}/russian" target="_blank"> Youglish |<a/>
@@ -416,7 +416,7 @@
                         </div>
 
                         <div class="d-flex gap-2 pt-2 border-top">
-                            <button onclick="readSingleCard('word-${renderedCount + index}')" class="btn btn-sm btn-info text-white fw-bold" title="Đọc toàn bộ thẻ này">📖</button>
+                            <button onclick="readSingleCard('word-${renderedCount + index}')" class="btn btn-sm btn-info text-white fw-bold" title="Đọc toàn bộ thẻ này">🎧</button>
                             <a href="${yandexUrl}" target="_blank" class="btn btn-sm btn-light flex-fill text-danger fw-bold">Yandex</a>
                             <a href="${googleUrl}" target="_blank" class="btn btn-sm btn-light flex-fill text-primary fw-bold">Google</a>
                             <a href="${googleImgUrl}" target="_blank" class="btn btn-sm btn-light text-secondary">🖼️</a>
@@ -999,5 +999,6 @@ document.addEventListener('mouseup', function(e) {
 </body>
 
 </html>
+
 
 
