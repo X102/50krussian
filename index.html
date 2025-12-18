@@ -152,9 +152,10 @@
                 <h5 class="fw-bold text-primary">Về bộ từ điển này</h5>
                 <p class="text-muted">
                     Trang web này được xây dựng để giúp người Việt Nam tra cứu, học khoảng 50.000 từ vựng tiếng Nga phổ biến nhất. 
-                    Dữ liệu được sắp xếp từ xuất hiện nhiều nhất đến ít hơn, tích hợp nghĩa tiếng Việt và các công cụ tra cứu mở rộng. 
-                    Web có tính năng nghe máy đọc toàn bộ thẻ từ hoặc toàn bộ trang để bạn luyện đọc theo (luyện shadowing), giọng đọc có thể thay đổi trong cài đặt, thường sẽ hay hơn nếu nghe trên điện thoại.
-                    Dữ liệu sẽ được cập nhật thêm nếu tác giả rảnh hoặc có tâm trạng/động lực.
+                    Dữ liệu được sắp xếp từ xuất hiện nhiều nhất đến ít hơn, tích hợp nghĩa tiếng Việt và các công cụ tra cứu mở rộng. </br>
+                    Web có tính năng nghe máy đọc toàn bộ thẻ từ hoặc toàn bộ trang để bạn luyện đọc theo (luyện shadowing), giọng đọc có thể thay đổi trong cài đặt, thường sẽ hay hơn nếu nghe trên điện thoại. <br/>
+                    Dữ liệu sẽ được cập nhật thêm nếu tác giả rảnh hoặc có tâm trạng/động lực. <br/>
+                    p/s: Để ngừng nghe máy đọc, hãy nhấn lại nút ▶ màu xanh lá cây ở trên thanh công cụ.
                 </p>
             </div>
 
@@ -426,8 +427,7 @@
                         <a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${item.lemma}" target="_blank"> Vtudien |<a/>
                         <a href="https://youglish.com/pronounce/${item.lemma}/russian" target="_blank"> Youglish |<a/>
                         <a href="https://ru.wiktionary.org/wiki/${item.lemma}" target="_blank"> Wikitionary |<a/>
-                        <a href="https://tatoeba.org/vi/sentences/search?from=rus&query=${item.lemma}&to=vie" target="_blank"> Tatoeba <\a>    <br\>    
-                       <br\>  
+                        <a href="https://tatoeba.org/vi/sentences/search?from=rus&query=${item.lemma}&to=vie" target="_blank"> Tatoeba <\a>
                     </div>
                     <button id="btn-${uniqueId}" class="toggle-btn" style="display:${btnDisplay}" 
                             onclick="toggleCard('${uniqueId}')">
@@ -999,6 +999,7 @@ document.addEventListener('mouseup', function(e) {
 </body>
 
 </html>
+
 
 
 
